@@ -1,4 +1,5 @@
 #include "health_component.hpp"
+#include "actor_stats.hpp"
 #include <algorithm>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -9,6 +10,8 @@ namespace godot
         ClassDB::bind_method(D_METHOD("set_health", "new_health"), &HealthComponent::set_health);
         ClassDB::bind_method(D_METHOD("get_health"), &HealthComponent::get_health);
         ClassDB::bind_method(D_METHOD("add_health", "p_health"), &HealthComponent::add_health);
+
+        ClassDB::bind_method(D_METHOD("is_alive", "p_emit_signal"), &HealthComponent::is_alive);
 
         ClassDB::bind_method(D_METHOD("set_max_health", "p_max_health"), &HealthComponent::set_max_health);
         ClassDB::bind_method(D_METHOD("get_max_health"), &HealthComponent::get_max_health);
@@ -27,6 +30,11 @@ namespace godot
 
         ClassDB::add_property("HealthComponent", PropertyInfo(Variant::FLOAT, "regen_amount"), "set_regen_amount", "get_regen_amount");
         ClassDB::add_property("HealthComponent", PropertyInfo(Variant::FLOAT, "regen_interval"), "set_regen_interval", "get_regen_interval");
+
+        ClassDB::bind_method(D_METHOD("take_damage", "p_base_damage"), &HealthComponent::take_damage);
+        
+        ADD_SIGNAL(MethodInfo("died"));
+        ADD_SIGNAL(MethodInfo("health_changed", PropertyInfo(Variant::FLOAT, "next_health"), PropertyInfo(Variant::FLOAT, "prev_health")));
     }
 
     HealthComponent::HealthComponent()
@@ -62,7 +70,11 @@ namespace godot
 
     void HealthComponent::set_health(float p_health)
     {
+        float prev_health = current_health;
         current_health = std::clamp(p_health, 0.0f, max_health);
+
+        emit_signal("health_changed", current_health, prev_health);
+        is_alive(true);
     }
 
     float HealthComponent::get_health() const
@@ -72,9 +84,29 @@ namespace godot
 
     float HealthComponent::add_health(float p_health)
     {
+        float prev_health = current_health;
         current_health += p_health;
-        return current_health = std::clamp(current_health, 0.0f, max_health);
+        current_health = std::clamp(current_health, 0.0f, max_health);
+
+        emit_signal("health_changed", current_health, prev_health);
+        is_alive(true);
+
+        return current_health;
     }
+    
+    bool HealthComponent::is_alive(bool p_emit_signal)
+    {
+        if(current_health > 0){
+            return true;
+        }
+        else if(p_emit_signal){
+            emit_signal("died");
+            UtilityFunctions::print("Entity is dead!");
+        }
+        return false;
+    }
+
+    
 
     void HealthComponent::set_max_health(float p_max_health) 
     {
@@ -105,5 +137,27 @@ namespace godot
 
     void HealthComponent::set_regen_interval(float p_interval) { regen_interval = p_interval; }
     float HealthComponent::get_regen_interval() const { return regen_interval; }
+
+    bool HealthComponent::take_damage(float p_damage) {
+        if (current_health <= 0.0f) { return false; }
+
+        ActorStats* stats = get_node<ActorStats>("../ActorStats");
+
+        if (stats != nullptr) {
+            if (stats->check_evade()) {
+                UtilityFunctions::print("Evaded! No damage taken.");
+                return false;
+            }
+
+            float final_damage = stats->damage_reduction_calculation(p_damage);
+            
+            add_health(-final_damage);
+            
+            UtilityFunctions::print("Took damage: ", final_damage, " | Remaining HP: ", current_health);
+        } else {
+            add_health(-p_damage);
+        }
+        return true;
+    }
 
 } // namespace godot

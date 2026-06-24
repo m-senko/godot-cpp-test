@@ -21,6 +21,8 @@ namespace godot
         float get_health() const;
         float add_health(float p_health);
 
+        bool is_alive(bool p_emit_signal);
+
         void set_max_health(float p_max_health);
         float get_max_health() const;
 
@@ -33,6 +35,8 @@ namespace godot
 
         void set_regen_interval(float p_interval);
         float get_regen_interval() const;
+
+        bool take_damage(float p_base_damage);
 
     private:
         float max_health;
