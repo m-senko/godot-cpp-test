@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="HealthComponent" inherits="Node" xmlns:xsi="http://w3.org" xsi:noNamespaceSchemaLocation="https://githubusercontent.com">
+	<brief_description>
+		A component node that manages health logic, limits, and passive regeneration for game entities.
+	</brief_description>
+	<description>
+		The [HealthComponent] is a modular [Node] written in C++ (GDExtension) designed to handle health tracking, healing, and passive regeneration. 
+		It maintains internal boundaries for health points using standard mathematical clamping to prevent bugs like negative health or exceeding maximum limits.
+		Can be attached to any game entity (e.g., players, enemies, or destructible objects) to instantly give them health capabilities.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_health">
+			<return type="float" />
+			<param index="0" name="p_health" type="float" />
+			<description>
+				Adds the specified [param p_health] amount to [member current_health]. 
+				The resulting value is automatically clamped and the method returns the final updated health.
+			</description>
+		</method>
+		<method name="change_health">
+			<return type="void" />
+			<param index="0" name="p_new_max" type="float" />
+			<param index="1" name="p_new_current" type="float" />
+			<description>
+				Simultaneously changes [member max_health] and handles [member current_health] scaling. Useful for RPG level-up mechanics.
+			</description>
+		</method>
+		<method name="get_health" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current health points of the entity.
+			</description>
+		</method>
+		<method name="get_max_health" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the maximum health capacity of the entity.
+			</description>
+		</method>
+		<method name="get_regen_amount" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current amount of health restored per regeneration tick.
+			</description>
+		</method>
+		<method name="get_regen_interval" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current time interval between regeneration ticks.
+			</description>
+		</method>
+		<method name="set_health">
+			<return type="void" />
+			<param index="0" name="new_health" type="float" />
+			<description>
+				Directly sets the [member current_health] to [param new_health]. The value is safely clamped between [code]0.0[/code] and [member max_health].
+			</description>
+		</method>
+		<method name="set_max_health">
+			<return type="void" />
+			<param index="0" name="p_max_health" type="float" />
+			<description>
+				Sets the maximum health capacity ([member max_health]). Automatically clamps [member current_health] if the new maximum is lower than the current health value.
+			</description>
+		</method>
+		<method name="set_regen_amount">
+			<return type="void" />
+			<param index="0" name="p_amount" type="float" />
+			<description>
+				Sets the amount of health restored per regeneration tick.
+			</description>
+		</method>
+		<method name="set_regen_interval">
+			<return type="void" />
+			<param index="0" name="p_interval" type="float" />
+			<description>
+				Sets the time interval between regeneration ticks.
+			</description>
+		</method>
+		<method name="set_regeneration">
+			<return type="void" />
+			<param index="0" name="p_amount" type="float" />
+			<param index="1" name="p_interval" type="float" />
+			<description>
+				A convenience method to configure both regeneration amount and interval in a single call.
+				[b]Note:[/b] To completely disable passive regeneration, set either [param p_amount] or [param p_interval] to [code]0.0[/code] (or a negative value).
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="current_health" type="float" setter="set_health" getter="get_health" default="100.0">
+			The current health points of the entity. Modifying this property automatically clamps the value between [code]0.0[/code] and [code]max_health[/code].
+		</member>
+		<member name="max_health" type="float" setter="set_max_health" getter="get_max_health" default="100.0">
+			The maximum health capacity of the entity. Changing this value ensures [member current_health] never exceeds the new boundary.
+		</member>
+		<member name="regen_amount" type="float" setter="set_regen_amount" getter="get_regen_amount" default="1.0">
+			The amount of health points recovered on each regeneration tick. 
+			Setting this to [code]0.0[/code] disables passive regeneration.
+		</member>
+		<member name="regen_interval" type="float" setter="set_regen_interval" getter="get_regen_interval" default="1.0">
+			The time interval (in seconds) between each regeneration tick. 
+			Setting this to [code]0.0[/code] disables passive regeneration.
+		</member>
+	</members>
+</class>

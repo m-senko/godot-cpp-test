@@ -1,5 +1,7 @@
 // Include your classes, that you want to expose to Godot
 
+#include "health_component.hpp"
+#include "stats_calculator.hpp"
 #include <gdextension_interface.h>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/defs.hpp>
@@ -12,6 +14,9 @@ void initialize_gdextension_types(ModuleInitializationLevel p_level)
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+
+	ClassDB::register_class<HealthComponent>();
+    ClassDB::register_class<StatsCalculator>();
 }
 
 void uninitialize_gdextension_types(ModuleInitializationLevel p_level) {

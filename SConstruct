@@ -178,6 +178,11 @@ def write_info_plist(target, source, env, plist_content):
     with open(target[0].abspath, 'w') as f:
         f.write(plist_content)
 
+# Custom
+
+if env["platform"] == "windows":
+    env.Append(CCFLAGS=["/utf-8"])
+
 # Build the shared library and create frameworks
 library = None
 install_source = None

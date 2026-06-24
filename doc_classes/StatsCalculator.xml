@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="StatsCalculator" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A custom RPG-style experience and level progression calculator.
+	</brief_description>
+	<description>
+		This class handles character level-up mechanics using an exponential progression formula. 
+		It operates as a [RefCounted] object, meaning its memory is managed automatically by Godot's reference counting system. 
+		When experience points exceed the current level threshold, it automatically recalculates the level, consumes the required XP, and emits the [signal level_up] signal.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_level">
+			<return type="void" />
+			<param index="0" name="p_level" type="int" />
+			<description>
+				Instantly increases the current level by the specified [param p_level] amount. 
+				This method resets the remaining [code]total_xp[/code] to [code]0[/code] and immediately emits the [signal level_up] signal.
+			</description>
+		</method>
+		<method name="add_xp">
+			<return type="void" />
+			<param index="0" name="p_value" type="float" />
+			<description>
+				Adds the specified [param p_value] amount of experience points to the pool. 
+				If the new total XP meets or exceeds the required threshold for the next level, it runs a loop to increase the level, deducts the consumed XP, and emits the [signal level_up] signal.
+				[b]Note:[/b] The threshold is calculated dynamically using the base value of [code]100[/code] multiplied by [code]level_progression[/code] to the power of current level minus one.
+			</description>
+		</method>
+		<method name="get_level" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the character's current level. The default starting level is [code]1[/code].
+			</description>
+		</method>
+		<method name="get_xp" qualifiers="const">
+			<return type="float" />
+			<description>
+				Returns the current amount of experience points remaining in the pool for the current level.
+			</description>
+		</method>
+		<method name="init">
+			<return type="void" />
+			<param index="0" name="p_progression" type="float" />
+			<description>
+				Initializes the multiplier for the exponential level progression formula. 
+				[b]Warning:[/b] It is recommended to call this method immediately after instantiating the object (e.g., via [code]StatsCalculator.new()[/code]) to override the default multiplier value of [code]1.1[/code].
+			</description>
+		</method>
+	</methods>
+	<signals>
+		<signal name="level_up">
+			<param index="0" name="new_level" type="int" />
+			<param index="1" name="levels_added" type="int" />
+			<description>
+				Emitted when the character levels up via [method add_xp] or [method add_level]. 
+				Provides [param new_level] as the resulting level and [param levels_added] as the total number of levels gained in this specific event.
+			</description>
+		</signal>
+	</signals>
+</class>
