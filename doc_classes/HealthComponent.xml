@@ -1,137 +1,80 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<class name="HealthComponent" inherits="Node" xmlns:xsi="http://w3.org" xsi:noNamespaceSchemaLocation="https://githubusercontent.com">
+<class name="HealthComponent" inherits="Node" xmlns:xsi="http://w3.org" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
 	<brief_description>
-		An advanced component node that manages health logic, RPG stat-driven damage, and passive regeneration.
+		Component managing the lifespan, damage mitigation, and health state of an entity.
 	</brief_description>
 	<description>
-		The [HealthComponent] is a modular [Node] written in C++ (GDExtension) designed to handle health tracking, healing, dynamic damage mitigation, and passive regeneration. 
-		It seamlessly integrates with [HealthComponent] to automatically handle evasion and armor reduction. 
-		All changes to health trigger detailed event notifications, making it perfectly suited for turn-based and real-time RPG systems.
+		[HealthComponent] tracks the current and maximum health of an in-game entity. It can function completely standalone (e.g., for breaking props or barrels) using a default baseline value, or automatically synchronize with a neighboring [StatsComponent] to scale its parameters dynamically.
+		The component intercepts incoming flat damage via [method take_damage], automatically processes agility-based evasion or endurance-based mitigation rules if stats are available, and guarantees that vital structural lifecycle events like [signal died] or [signal health_changed] are safely emitted without redundant replication.
 	</description>
 	<tutorials>
 	</tutorials>
 	<methods>
-		<method name="add_health">
-			<return type="float" />
-			<param index="0" name="p_health" type="float" />
-			<description>
-				Adjusts [member current_health] by adding the specified [param p_health] value (supports negative values for raw damage). 
-				Automatically handles clamping, triggers the [signal health_changed] signal, checks entity vitality status, and returns the updated health value.
-			</description>
-		</method>
-		<method name="change_health">
-			<return type="void" />
-			<param index="0" name="p_new_max" type="float" />
-			<param index="1" name="p_new_current" type="float" />
-			<description>
-				Allows manual, precise overriding of both [member max_health] and [member current_health] boundaries simultaneously. 
-				Commonly used for stat-driven percentage scaling or equipment changes.
-			</description>
-		</method>
 		<method name="get_health" qualifiers="const">
 			<return type="float" />
 			<description>
-				Returns the current health points of the entity.
+				Returns the current health points remaining.
 			</description>
 		</method>
 		<method name="get_max_health" qualifiers="const">
 			<return type="float" />
 			<description>
-				Returns the maximum health capacity of the entity.
+				Returns the evaluated maximum health upper bound.
 			</description>
 		</method>
-		<method name="get_regen_amount" qualifiers="const">
-			<return type="float" />
-			<description>
-				Returns the current amount of health restored per regeneration tick.
-			</description>
-		</method>
-		<method name="get_regen_interval" qualifiers="const">
-			<return type="float" />
-			<description>
-				Returns the current time interval between regeneration ticks.
-			</description>
-		</method>
-		<method name="is_alive">
+		<method name="is_alive" qualifiers="const">
 			<return type="bool" />
-			<param index="0" name="p_emit_signal" type="bool" />
 			<description>
-				Checks whether [member current_health] is greater than zero. 
-				If the entity is dead and [param p_emit_signal] is [code]true[/code], it triggers the [signal died] signal exactly once.
+				Returns [code]true[/code] if the current health is strictly greater than zero; otherwise returns [code]false[/code].
 			</description>
 		</method>
 		<method name="set_health">
 			<return type="void" />
-			<param index="0" name="new_health" type="float" />
+			<param index="0" name="p_health" type="float" />
 			<description>
-				Directly sets the [member current_health] to [param new_health], clamping it safely. Triggers the [signal health_changed] signal.
+				Updates the current health points. Clamps the value between [code]0.0[/code] and [member max_health] automatically. If the value changes, it triggers [signal health_changed]. If the value drops to zero or below from a living state, it fires the [signal died] signal.
 			</description>
 		</method>
 		<method name="set_max_health">
 			<return type="void" />
 			<param index="0" name="p_max_health" type="float" />
 			<description>
-				Sets the maximum health capacity ([member max_health]), keeping [member current_health] within safe boundaries.
-			</description>
-		</method>
-		<method name="set_regen_amount">
-			<return type="void" />
-			<param index="0" name="p_amount" type="float" />
-			<description>
-				Sets the amount of health restored per regeneration tick.
-			</description>
-		</method>
-		<method name="set_regen_interval">
-			<return type="void" />
-			<param index="0" name="p_interval" type="float" />
-			<description>
-				Sets the time interval between regeneration ticks.
-			</description>
-		</method>
-		<method name="set_regeneration">
-			<return type="void" />
-			<param index="0" name="p_amount" type="float" />
-			<param index="1" name="p_interval" type="float" />
-			<description>
-				A convenience method to configure both regeneration parameters in a single call. 
-				Setting either parameter to [code]0.0[/code] safely deactivates the regeneration system.
+				Sets the maximum health pool ceiling. Clamps the input to a minimum threshold of [code]0.1[/code] to safeguard against division by zero. Readjusts current health proportionally based on the previous maximum capacity percentage.
 			</description>
 		</method>
 		<method name="take_damage">
 			<return type="bool" />
 			<param index="0" name="p_base_damage" type="float" />
 			<description>
-				Processes incoming combat damage. Automatically queries the adjacent [ActorStats] component on the same entity to process random-rolled evasion checks and armor mitigation. 
-				Returns [code]true[/code] if the entity sustained damage, or [code]false[/code] if the attack was successfully evaded.
+				Applies raw incoming damage to the component. If a [StatsComponent] is detected on the same parent node, it processes an RNG-based roll against evasion chance first. If evasion fails, it scales down the final damage according to the entity's mitigation modifiers before reducing the health pool. Returns [code]true[/code] if damage calculation processed successfully, or [code]false[/code] if the entity was already dead or the input damage was invalid.
 			</description>
 		</method>
 	</methods>
 	<members>
+		<member name="base_health" type="float" default="100.0">
+			The fundamental baseline health of the node before any attribute coefficients or external flat and percent bonuses are computed. (Note: Ensure this is bound via ClassDB to populate in the Godot Inspector).
+		</member>
 		<member name="current_health" type="float" setter="set_health" getter="get_health" default="100.0">
-			The current health points of the entity. Modifying this property automatically clamps the value between [code]0.0[/code] and [member max_health].
+			The entity's ongoing current health value, securely bounded within the maximum structural limits.
 		</member>
 		<member name="max_health" type="float" setter="set_max_health" getter="get_max_health" default="100.0">
-			The maximum health capacity of the entity. Changing this value ensures [member current_health] never exceeds the new boundary.
-		</member>
-		<member name="regen_amount" type="float" setter="set_regen_amount" getter="get_regen_amount" default="1.0">
-			The amount of health points recovered on each regeneration tick.
-		</member>
-		<member name="regen_interval" type="float" setter="set_regen_interval" getter="get_regen_interval" default="1.0">
-			The time interval (in seconds) between each regeneration tick.
+			The evaluated active maximum health capacity, representing the unified sum of baseline metrics and dynamically calculated status parameters.
 		</member>
 	</members>
 	<signals>
 		<signal name="died">
 			<description>
-				Emitted immediately when [member current_health] drops to [code]0.0[/code] and the entity is verified as dead.
+				Fired exactly once at the precise moment when [member current_health] hits zero or below, shifting the entity state from alive to dead.
 			</description>
 		</signal>
 		<signal name="health_changed">
 			<param index="0" name="next_health" type="float" />
 			<param index="1" name="prev_health" type="float" />
+			<param index="2" name="max_health" type="float" />
 			<description>
-				Emitted every time [member current_health] changes through healing, regeneration, or damage. 
-				Provides [param next_health] (the updated value) and [param prev_health] (the state before modification), which is highly practical for smooth UI synchronization.
+				Emitted whenever the entity's [member current_health] points shift up or down. 
+				Passes the newly calculated value ([param next_health]), the value prior to the modification ([param prev_health]) and ([param max_health]). 
+				This data is highly efficient for updating User Interface elements (like health bars) or calculating exact damage/healing deltas to spawn dynamic effects such as floating combat text without invoking manual C++ getter lookups.
 			</description>
 		</signal>
 	</signals>

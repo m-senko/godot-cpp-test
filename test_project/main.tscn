@@ -161,7 +161,7 @@ tile_set = SubResource("TileSet_ig7tw")
 collision_enabled = false
 
 [node name="Player" parent="." unique_id=2119305056 instance=ExtResource("2_0xm2m")]
-position = Vector2(224, 160)
+position = Vector2(288, 160)
 
 [node name="Enemy" parent="." unique_id=521810314 instance=ExtResource("3_h2yge")]
 position = Vector2(128, 160)

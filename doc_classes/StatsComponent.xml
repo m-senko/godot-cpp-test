@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="StatsComponent" inherits="Node" xmlns:xsi="http://w3.org" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+		Component managing core role-playing attributes and status calculations for an entity.
+	</brief_description>
+	<description>
+		[StatsComponent] handles the storage, modification, and evaluation of core entity stats (Strength, Agility, Vitality, Endurance). 
+		It acts as a standalone data provider decoupled from other game systems. It utilizes an external [StatsBalanceConfig] resource to extract formula multipliers dynamically. When any base stat or configuration changes, it fires the [signal stats_changed] signal, allowing dependent, isolated nodes (such as a [code]HealthComponent[/code]) to recalculate their states instantly.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_agility" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the current base Agility value.
+			</description>
+		</method>
+		<method name="get_balance_config" qualifiers="const">
+			<return type="StatsBalanceConfig" />
+			<description>
+				Returns the assigned [StatsBalanceConfig] resource. Returns [code]null[/code] if no configuration is attached.
+			</description>
+		</method>
+		<method name="get_endurance" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the current base Endurance value.
+			</description>
+		</method>
+		<method name="get_strength" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the current base Strength value.
+			</description>
+		</method>
+		<method name="get_vitality" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the current base Vitality value.
+			</description>
+		</method>
+		<method name="set_agility">
+			<return type="void" />
+			<param index="0" name="p_value" type="int" />
+			<description>
+				Sets a new base value for Agility. The value is clamped internally to a minimum of 1 ([code]std::max(1, value)[/code]). Emits the [signal stats_changed] signal.
+			</description>
+		</method>
+		<method name="set_balance_config">
+			<return type="void" />
+			<param index="0" name="p_config" type="StatsBalanceConfig" />
+			<description>
+				Attaches a [StatsBalanceConfig] resource to recalculate secondary attribute formulas at runtime. Emits the [signal stats_changed] signal.
+			</description>
+		</method>
+		<method name="set_endurance">
+			<return type="void" />
+			<param index="0" name="p_value" type="int" />
+			<description>
+				Sets a new base value for Endurance. The value is clamped internally to a minimum of 1. Emits the [signal stats_changed] signal.
+			</description>
+		</method>
+		<method name="set_strength">
+			<return type="void" />
+			<param index="0" name="p_value" type="int" />
+			<description>
+				Sets a new base value for Strength. The value is clamped internally to a minimum of 1. Emits the [signal stats_changed] signal.
+			</description>
+		</method>
+		<method name="set_vitality">
+			<return type="void" />
+			<param index="0" name="p_value" type="int" />
+			<description>
+				Sets a new base value for Vitality. The value is clamped internally to a minimum of 1. Emits the [signal stats_changed] signal.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="agility" type="int" setter="set_agility" getter="get_agility" default="10">
+			The entity's Agility. Governs secondary computations such as evasion chance and critical strike probability. Cannot drop below 1.
+		</member>
+		<member name="balance_config" type="StatsBalanceConfig" setter="set_balance_config" getter="get_balance_config">
+			The resource holding balance coefficients. Allows tweaking RPG formulas inside the Godot Inspector without C++ recompilation. If unassigned, hardcoded fallback constants are applied.
+		</member>
+		<member name="endurance" type="int" setter="set_endurance" getter="get_endurance" default="10">
+			The entity's Endurance. Directly dictates the percentage of incoming flat physical damage reduction. Cannot drop below 1.
+		</member>
+		<member name="strength" type="int" setter="set_strength" getter="get_strength" default="10">
+			The entity's Strength. Used by combat calculations to scale physical attack power bonuses. Cannot drop below 1.
+		</member>
+		<member name="vitality" type="int" setter="set_vitality" getter="get_vitality" default="10">
+			The entity's Vitality. The baseline multiplier used by health systems to determine maximum health scaling. Cannot drop below 1.
+		</member>
+	</members>
+	<signals>
+		<signal name="stats_changed">
+			<description>
+				Emitted whenever a core attribute value updates or a new [code]balance_config[/code] resource is set. Notifies listening systems to refresh cached attributes or recalibrate metrics.
+			</description>
+		</signal>
+	</signals>
+</class>

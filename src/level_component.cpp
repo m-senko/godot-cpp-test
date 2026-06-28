@@ -18,13 +18,9 @@ LevelComponent::LevelComponent()
 :   total_xp(0),
     current_level(1),
     level_progression(1.1)
-{
-    UtilityFunctions::print("LevelComponent created");
-}
+{}
 
-LevelComponent::~LevelComponent() {
-    UtilityFunctions::print("LevelComponent destroyed");
-}
+LevelComponent::~LevelComponent() {}
 
 void LevelComponent::init(float p_progression)
 {

@@ -1,0 +1,4 @@
+[gd_resource type="StatsBalanceConfig" format=3 uid="uid://dukj5a32plwqt"]
+
+[resource]
+hp_per_vitality = 10.0
