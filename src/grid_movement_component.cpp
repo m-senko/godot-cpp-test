@@ -84,7 +84,7 @@ bool GridMovementComponent::try_move(Vector2i p_direction) {
     
     if (map_singltone != nullptr && map_singltone->is_tile_walkable(target_cell)) {
         set_grid_position(target_cell);
-        map_singltone->on_cell_entered(get_owner(), target_cell);
+        map_singltone->on_cell_entered(target_cell, get_owner());
         return true; 
     }
 

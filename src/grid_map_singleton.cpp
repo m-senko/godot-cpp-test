@@ -5,13 +5,24 @@
 
 namespace godot {
 
+// =============================================================================
+// Godot Binding
+// =============================================================================
+
 void GridMapSingleton::_bind_methods() {
     ClassDB::bind_method(D_METHOD("is_tile_walkable", "p_cell"), &GridMapSingleton::is_tile_walkable);
-    ClassDB::bind_method(D_METHOD("on_cell_entered", "p_entity", "p_cell"), &GridMapSingleton::on_cell_entered);
+    ClassDB::bind_method(D_METHOD("on_cell_entered", "p_cell", "p_node"), &GridMapSingleton::on_cell_entered);
     
+    ClassDB::bind_method(D_METHOD("get_occupant", "p_cell"), &GridMapSingleton::get_occupant);
+    ClassDB::bind_method(D_METHOD("get_effect", "p_cell"), &GridMapSingleton::get_effect);
+
     ClassDB::bind_method(D_METHOD("set_occupant", "p_cell", "p_node"), &GridMapSingleton::set_occupant);
     ClassDB::bind_method(D_METHOD("clear_occupant", "p_cell"), &GridMapSingleton::clear_occupant);
 }
+
+// =============================================================================
+// Lifecycle & Initialization
+// =============================================================================
 
 GridMapSingleton* GridMapSingleton::singleton = nullptr;
 
@@ -20,6 +31,7 @@ GridMapSingleton* GridMapSingleton::get_singleton() {
 }
 
 GridMapSingleton::GridMapSingleton() : visual_layer(nullptr), map_size(0, 0) {}
+
 GridMapSingleton::~GridMapSingleton() {
     if (singleton == this) {
         singleton = nullptr;
@@ -65,49 +77,102 @@ void GridMapSingleton::initialize_map() {
     UtilityFunctions::print("GridMapSingleton initialized. Size: ", map_size, " | Offset: ", map_offset);
 }
 
-bool GridMapSingleton::is_tile_walkable(Vector2i p_cell) const {
-    Vector2i local_cell = p_cell - map_offset;
+// =============================================================================
+// Coordinate System Helpers
+// =============================================================================
 
-    if (local_cell.x < 0 || local_cell.x >= map_size.x || local_cell.y < 0 || local_cell.y >= map_size.y) {
-        return false;
+Vector2i GridMapSingleton::global_to_grid(Vector2i p_global_cell) const {
+    return p_global_cell - map_offset;
+}
+
+bool GridMapSingleton::is_index_valid(Vector2i p_local_cell) const {
+    return p_local_cell.x >= 0 && p_local_cell.x < map_size.x &&
+           p_local_cell.y >= 0 && p_local_cell.y < map_size.y;
+}
+
+// =============================================================================
+// Grid Logic - Local Coordinates (Internal Business Logic)
+// =============================================================================
+
+Node* GridMapSingleton::get_occupant_local(Vector2i p_local_cell) {
+    if (!is_index_valid(p_local_cell)) { return nullptr; }
+    
+    ObjectID id = matrix[p_local_cell.x][p_local_cell.y].occupant_id;
+    if (id.is_null()) { return nullptr; }
+
+    Object* obj = ObjectDB::get_instance(id);
+    if (obj == nullptr) {
+        matrix[p_local_cell.x][p_local_cell.y].occupant_id = ObjectID(); 
+        return nullptr;
     }
-    const CellState& cell = matrix[local_cell.x][local_cell.y];
+    return Object::cast_to<Node>(obj);
+}
 
-    if (cell.is_wall) { return false; }
-    if (cell.occupant != nullptr) { return false; }
+Node* GridMapSingleton::get_effect_local(Vector2i p_local_cell) {
+    if (!is_index_valid(p_local_cell)) { return nullptr; }
+    
+    ObjectID id = matrix[p_local_cell.x][p_local_cell.y].ground_effect_id;
+    if (id.is_null()) { return nullptr; }
+
+    Object* obj = ObjectDB::get_instance(id);
+    if (obj == nullptr) {
+        matrix[p_local_cell.x][p_local_cell.y].ground_effect_id = ObjectID(); 
+        return nullptr;
+    }
+    return Object::cast_to<Node>(obj);
+}
+
+bool GridMapSingleton::is_tile_walkable_local(Vector2i p_local_cell) {
+    if (!is_index_valid(p_local_cell)) { return false; }
+    if (matrix[p_local_cell.x][p_local_cell.y].is_wall) { return false; }
+    
+    if (get_occupant_local(p_local_cell) != nullptr) { return false; } 
 
     return true; 
 }
 
+// =============================================================================
+// Grid Logic - Global Coordinates (API Overtures for GDScript / External Nodes)
+// =============================================================================
 
-bool GridMapSingleton::set_occupant(Vector2i p_cell, Node* p_node) {
-    p_cell -= map_offset;
-    if (p_cell.x < 0 || p_cell.x >= map_size.x || p_cell.y < 0 || p_cell.y >= map_size.y || p_node == nullptr) { return false; }
-    
-    matrix[p_cell.x][p_cell.y].occupant = p_node;
+Node* GridMapSingleton::get_occupant(Vector2i p_global_cell) {
+    return get_occupant_local(global_to_grid(p_global_cell));
+}
+
+Node* GridMapSingleton::get_effect(Vector2i p_global_cell) {
+    return get_effect_local(global_to_grid(p_global_cell));
+}
+
+bool GridMapSingleton::is_tile_walkable(Vector2i p_global_cell) {
+    return is_tile_walkable_local(global_to_grid(p_global_cell));
+}
+
+bool GridMapSingleton::set_occupant(Vector2i p_global_cell, Node* p_node) {
+    if (p_node == nullptr) { return false; }
+
+    Node* current_occupant = get_occupant(p_global_cell);
+    if (current_occupant != nullptr && current_occupant != p_node) {
+        return false; 
+    }
+
+    Vector2i local_cell = global_to_grid(p_global_cell);
+    if (!is_index_valid(local_cell)) { return false; }
+
+    matrix[local_cell.x][local_cell.y].occupant_id = p_node->get_instance_id();
     return true;
 }
 
-void GridMapSingleton::clear_occupant(Vector2i p_cell) {
-    p_cell -= map_offset;
-    if (p_cell.x < 0 || p_cell.x >= map_size.x || p_cell.y < 0 || p_cell.y >= map_size.y) { return; }
-    matrix[p_cell.x][p_cell.y].occupant = nullptr;
+void GridMapSingleton::clear_occupant(Vector2i p_global_cell) {
+    Vector2i local_cell = global_to_grid(p_global_cell);
+    if (!is_index_valid(local_cell)) { return; }
+
+    matrix[local_cell.x][local_cell.y].occupant_id = ObjectID();
 }
 
-Node* GridMapSingleton::get_occupant(Vector2i p_cell) const {
-    p_cell -= map_offset;
-    if (p_cell.x < 0 || p_cell.x >= map_size.x || p_cell.y < 0 || p_cell.y >= map_size.y) { return nullptr; }
-    return matrix[p_cell.x][p_cell.y].occupant;
-}
-
-void GridMapSingleton::on_cell_entered(Node* p_entity, Vector2i p_cell) {
-    p_cell -= map_offset;
-    if (p_cell.x < 0 || p_cell.x >= map_size.x || p_cell.y < 0 || p_cell.y >= map_size.y) { return; }
-
-    CellState& cell = matrix[p_cell.x][p_cell.y];
-
-    if (cell.ground_effect != nullptr) {
-        cell.ground_effect->call("apply_effect", p_entity);
+void GridMapSingleton::on_cell_entered(Vector2i p_global_cell, Node* p_entity) {
+    Node* ground_effect = get_effect(p_global_cell); 
+    if (ground_effect != nullptr) {
+        ground_effect->call("apply_effect", p_entity);
     }
 }
 

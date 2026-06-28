@@ -7,17 +7,23 @@
 
 namespace godot {
 
-// Легковесная структура состояния одной ячейки сетки
+// =============================================================================
+// Grid Structures
+// =============================================================================
+
 struct CellState {
     bool is_wall = false;          
-    Node* occupant = nullptr;     
-    Node* ground_effect = nullptr; 
-    Node* dropped_item = nullptr;
+    ObjectID occupant_id;
+    ObjectID ground_effect_id;
+    ObjectID dropped_item_id;
 };
 
 class GridMapSingleton : public Node {
     GDCLASS(GridMapSingleton, Node);
 
+// =============================================================================
+// Internal Data Members & Helpers
+// =============================================================================
 private:
     std::vector<std::vector<CellState>> matrix;
     Vector2i map_size;
@@ -26,9 +32,18 @@ private:
 
     static GridMapSingleton* singleton;
 
+    Vector2i global_to_grid(Vector2i p_global_cell) const;
+    bool is_index_valid(Vector2i p_local_cell) const;
+
+// =============================================================================
+// Godot Binding
+// =============================================================================
 protected:
     static void _bind_methods();
 
+// =============================================================================
+// Lifecycle & Initialization
+// =============================================================================
 public:
     GridMapSingleton();
     ~GridMapSingleton();
@@ -39,13 +54,23 @@ public:
 
     void initialize_map();
 
-    bool is_tile_walkable(Vector2i p_cell) const;
+// =============================================================================
+// Grid Logic - Global Coordinates (API Overtures for GDScript / External Nodes)
+// =============================================================================
+    Node* get_occupant(Vector2i p_global_cell);
+    Node* get_effect(Vector2i p_global_cell);
+    bool is_tile_walkable(Vector2i p_global_cell);
+    
+    bool set_occupant(Vector2i p_global_cell, Node* p_node);
+    void clear_occupant(Vector2i p_global_cell);
+    void on_cell_entered(Vector2i p_global_cell, Node* p_node);
 
-    bool set_occupant(Vector2i p_cell, Node* p_node);
-    Node* get_occupant(Vector2i p_cell) const;
-    void clear_occupant(Vector2i p_cell);
-
-    void on_cell_entered(Node* p_entity, Vector2i p_cell);
+// =============================================================================
+// Grid Logic - Local Coordinates (Internal Business Logic)
+// =============================================================================
+    Node* get_occupant_local(Vector2i p_local_cell);
+    Node* get_effect_local(Vector2i p_local_cell);
+    bool is_tile_walkable_local(Vector2i p_local_cell);
 };
 
 } // namespace godot
