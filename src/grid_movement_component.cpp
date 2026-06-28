@@ -26,9 +26,14 @@ GridMovementComponent::GridMovementComponent()
     map_singltone(nullptr)
 {}
 
-GridMovementComponent::~GridMovementComponent() {
-    if (map_singltone != nullptr) {
-        map_singltone->clear_occupant(grid_position);
+GridMovementComponent::~GridMovementComponent() {}
+
+void GridMovementComponent::_exit_tree() {
+    if (GridMapSingleton::get_singleton() != nullptr) {
+        
+        if (map_singltone != nullptr) {
+            map_singltone->clear_occupant(grid_position);
+        }
     }
 }
 

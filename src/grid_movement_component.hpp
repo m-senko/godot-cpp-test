@@ -22,6 +22,7 @@ public:
     GridMovementComponent();
     ~GridMovementComponent();
 
+    void _exit_tree() override;
     void _ready() override;
 
     bool map_init();
