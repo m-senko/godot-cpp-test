@@ -15,6 +15,8 @@ font_size = 5
 [node name="HealthComponent" type="HealthComponent" parent="." unique_id=322187553]
 
 [node name="StatsComponent" type="StatsComponent" parent="." unique_id=584282133]
+agility = 100
+vitality = 100
 endurance = 100
 balance_config = SubResource("StatsBalanceConfig_yfjof")
 

@@ -1,4 +1,5 @@
 #include "actor.hpp"
+#include "base_component.hpp"
 
 namespace godot {
 
@@ -11,13 +12,21 @@ Actor::~Actor() {}
 
 void Actor::_ready() {
     int child_count = get_child_count();
+    
     for (int i = 0; i < child_count; ++i) {
         Node* child = get_child(i);
         if (child == nullptr) continue;
+        BaseComponent* comp_check = Object::cast_to<BaseComponent>(child);
+        if (comp_check != nullptr) {
+            components_cache[child->get_class()] = child;
+        }
+    }
 
-        StringName child_class = child->get_class();
-        
-        components_cache[child_class] = child;
+    for (int i = 0; i < child_count; ++i) {
+        BaseComponent* component = Object::cast_to<BaseComponent>(get_child(i));
+        if (component != nullptr) {
+            component->_on_actor_ready(this); 
+        }
     }
 }
 

@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://i70g2kq6ligo" path="res://art/tilemaps/Dungeon_Tileset.png" id="1_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://dumacnlmlt17r" path="res://prefabs/player.tscn" id="2_0xm2m"]
-[ext_resource type="PackedScene" uid="uid://bfmufujdc2fvy" path="res://prefabs/enemy.tscn" id="3_h2yge"]
+[ext_resource type="PackedScene" uid="uid://b8r6j4a0tqle" path="res://prefabs/enemy.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cphrh7eu517gl" path="res://prefabs/player_hud.tscn" id="4_1bvp3"]
 
 [sub_resource type="GDScript" id="GDScript_0xm2m"]
